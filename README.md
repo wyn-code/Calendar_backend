@@ -126,13 +126,13 @@ uvicorn app.main:app --reload
 - Documentación ReDoc: http://127.0.0.1:8000/redoc
 - Health check: http://127.0.0.1:8000/api/v1/health
 
-## Endpoints disponibles (stubs)
+## Endpoints disponibles
 
 | Método | Ruta                          | Descripción               |
 | ------ | ----------------------------- | ------------------------- |
 | GET    | `/api/v1/health`              | Estado de la API y la BD  |
-| POST   | `/api/v1/auth/register`       | Registro de usuario       |
-| POST   | `/api/v1/auth/login`          | Login (OAuth2 form)       |
+| POST   | `/api/v1/auth/register`       | Registro de usuario (email, contraseña, nombre) |
+| POST   | `/api/v1/auth/login`          | Login (JSON: email, contraseña) |
 | GET    | `/api/v1/auth/me`             | Usuario autenticado       |
 | CRUD   | `/api/v1/patients`            | Pacientes (autenticado)   |
 | CRUD   | `/api/v1/appointments`        | Turnos (autenticado)      |
@@ -140,8 +140,10 @@ uvicorn app.main:app --reload
 
 ## Notas
 
-- El login usa el flujo **OAuth2 password** (form-data `username`/`password`); el campo
-  `username` corresponde al **email** del usuario.
+- `POST /auth/register` crea un usuario con email, contraseña y nombre; devuelve `409` si el email ya existe.
+- El login recibe un JSON con `email`, `password` y el booleano opcional `remember_me`.
+  Si `remember_me` es `true`, el token dura `REMEMBER_ME_EXPIRE_DAYS` días; en caso
+  contrario `ACCESS_TOKEN_EXPIRE_MINUTES` minutos.
 - Las contraseñas se hashean con **bcrypt** (`app/core/security.py`) y nunca se devuelven en las respuestas.
 - Los esquemas `Response` usan `from_attributes=True` para serializar modelos ORM directamente.
 - `get_current_user` (`app/core/dependencies.py`) es la dependencia de protección de las rutas autenticadas.

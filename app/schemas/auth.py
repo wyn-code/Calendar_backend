@@ -4,10 +4,14 @@ from app.schemas.user import UserResponse
 
 
 class LoginRequest(BaseModel):
-    """Cuerpo de login alternativo (JSON). El flujo OAuth2 usa form-data."""
+    """Cuerpo de login (JSON) con email y contraseña.
+
+    `remember_me` amplía la validez del token para mantener la sesión iniciada.
+    """
 
     email: str
     password: str
+    remember_me: bool = False
 
 
 class Token(BaseModel):

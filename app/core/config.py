@@ -26,11 +26,13 @@ class Settings(BaseSettings):
     SECRET_KEY: str 
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REMEMBER_ME_EXPIRE_DAYS: int = 30
 
     # --- CORS (orígenes permitidos para el frontend React) ---
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
         "http://localhost:3000",
+        "http://localhost:8080/"
         "https://calendar-proyect-one.vercel.app",
     ]
 
