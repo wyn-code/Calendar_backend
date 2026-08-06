@@ -18,6 +18,17 @@ class AppointmentBase(BaseSchema):
 class AppointmentCreate(AppointmentBase):
     """Datos necesarios para crear un turno."""
 
+    patient_id: int | None = None
+    nombre_completo: str | None = Field(default=None, min_length=1, max_length=200)
+
+    @model_validator(mode="after")
+    def validar_paciente(self) -> Self:
+        if self.patient_id is None and not (self.nombre_completo and self.nombre_completo.strip()):
+            raise ValueError(
+                "Debe indicarse patient_id o nombre_completo para asociar un paciente al turno."
+            )
+        return self
+
     @model_validator(mode="after")
     def validar_obra_social(self) -> Self:
         if self.tipo_consulta == "Obra Social" and self.obra_social_id is None:
@@ -31,6 +42,7 @@ class AppointmentUpdate(BaseSchema):
     """Campos opcionales para actualizar un turno."""
 
     patient_id: int | None = None
+    nombre_completo: str | None = Field(default=None, min_length=1, max_length=200)
     obra_social_id: int | None = None
     fecha: date | None = None
     hora_inicio: time | None = None

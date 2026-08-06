@@ -16,8 +16,9 @@ class BaseRepository(Generic[ModelType]):
         self.model = model
 
     def create(self, obj_in: Any) -> ModelType:
-        """Persiste una nueva entidad a partir de un schema."""
-        instance = self.model(**obj_in.model_dump())
+        """Persiste una nueva entidad a partir de un schema o un dict."""
+        data = obj_in.model_dump() if hasattr(obj_in, "model_dump") else dict(obj_in)
+        instance = self.model(**data)
         self.db.add(instance)
         self.db.commit()
         self.db.refresh(instance)
@@ -34,7 +35,12 @@ class BaseRepository(Generic[ModelType]):
 
     def update(self, instance: ModelType, obj_in: Any) -> ModelType:
         """Aplica los campos presentes en `obj_in` sobre la entidad dada."""
-        for field, value in obj_in.model_dump(exclude_unset=True).items():
+        data = (
+            obj_in.model_dump(exclude_unset=True)
+            if hasattr(obj_in, "model_dump")
+            else dict(obj_in)
+        )
+        for field, value in data.items():
             setattr(instance, field, value)
         self.db.commit()
         self.db.refresh(instance)

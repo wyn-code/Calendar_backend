@@ -35,6 +35,8 @@ class PatientService:
             )
         return instance
 
-    def list(self, *, skip: int = 0, limit: int = 100) -> list[Patient]:
-        """Devuelve una lista paginada de pacientes."""
-        return self.repository.get_all(skip=skip, limit=limit)
+    def list(
+        self, *, search: str | None = None, skip: int = 0, limit: int = 100
+    ) -> list[Patient]:
+        """Devuelve una lista paginada de pacientes, con búsqueda por nombre."""
+        return self.repository.get_all(search=search, skip=skip, limit=limit)
