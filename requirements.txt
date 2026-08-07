@@ -3,6 +3,9 @@ fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 python-multipart>=0.0.9
 
+# Exportación a Excel (.xlsx) — rich text (CellRichText) requiere >= 3.1
+openpyxl>=3.1.5
+
 # Database
 sqlalchemy>=2.0.36
 psycopg[binary]>=3.2.0
