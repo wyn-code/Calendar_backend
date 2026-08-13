@@ -4,6 +4,7 @@ from typing import Self
 from pydantic import Field, model_validator
 
 from app.schemas.base import BaseSchema
+from app.schemas.patient import Consultorio
 
 
 class AppointmentBase(BaseSchema):
@@ -20,6 +21,7 @@ class AppointmentCreate(AppointmentBase):
 
     patient_id: int | None = None
     nombre_completo: str | None = Field(default=None, min_length=1, max_length=200)
+    consultorio: Consultorio | None = None
 
     @model_validator(mode="after")
     def validar_paciente(self) -> Self:
@@ -43,11 +45,20 @@ class AppointmentUpdate(BaseSchema):
 
     patient_id: int | None = None
     nombre_completo: str | None = Field(default=None, min_length=1, max_length=200)
+    consultorio: Consultorio | None = None
     obra_social_id: int | None = None
     fecha: date | None = None
     hora_inicio: time | None = None
     tipo_consulta: str | None = Field(default=None, min_length=1, max_length=50)
     observaciones: str | None = None
+
+    @model_validator(mode="after")
+    def validar_obra_social(self) -> Self:
+        if self.tipo_consulta == "Obra Social" and self.obra_social_id is None:
+            raise ValueError(
+                "El tipo de consulta 'Obra Social' requiere especificar obra_social_id."
+            )
+        return self
 
 
 class AppointmentResponse(AppointmentBase):

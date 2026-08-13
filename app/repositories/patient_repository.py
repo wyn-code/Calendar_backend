@@ -18,11 +18,28 @@ class PatientRepository(BaseRepository[Patient]):
         )
         return self.db.scalars(stmt).first()
 
+    def get_duplicate(
+        self, nombre_normalizado: str, consultorio: str
+    ) -> Patient | None:
+        """Busca un paciente del mismo consultorio con el mismo nombre normalizado."""
+        stmt = select(Patient).where(
+            Patient.nombre_normalizado == nombre_normalizado,
+            Patient.consultorio == consultorio,
+        )
+        return self.db.scalars(stmt).first()
+
     def get_all(
-        self, *, skip: int = 0, limit: int = 100, search: str | None = None
+        self,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        search: str | None = None,
+        consultorio: str | None = None,
     ) -> list[Patient]:
         """Devuelve una lista paginada de pacientes, ordenada por nombre."""
         stmt = select(Patient)
+        if consultorio:
+            stmt = stmt.where(Patient.consultorio == consultorio)
         if search:
             stmt = stmt.where(
                 func.lower(Patient.nombre_completo).contains(search.lower())

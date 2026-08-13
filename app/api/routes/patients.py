@@ -23,11 +23,14 @@ def get_patient(patient_id: int, db: DbSession) -> PatientResponse:
 def list_patients(
     db: DbSession,
     search: str | None = None,
+    consultorio: str | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> list[PatientResponse]:
-    """Lista pacientes paginados, con búsqueda opcional por nombre."""
-    return PatientService(db).list(search=search, skip=skip, limit=limit)
+    """Lista pacientes paginados, con búsqueda y filtro opcional por consultorio."""
+    return PatientService(db).list(
+        search=search, consultorio=consultorio, skip=skip, limit=limit
+    )
 
 
 @router.put("/{patient_id}", response_model=PatientResponse)

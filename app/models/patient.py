@@ -1,23 +1,40 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+
+class Consultorio(str, Enum):
+    """Consultorio al que pertenece el paciente."""
+
+    NEUROVITAL = "Neurovital"
+    INFANCIAS = "Infancias"
 
 
 class Patient(Base):
     """Paciente perteneciente a un usuario."""
 
     __tablename__ = "patients"
+    __table_args__ = (
+        Index("ix_patients_consultorio_normalizado", "consultorio", "nombre_normalizado"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), index=True, nullable=True
     )
     nombre_completo: Mapped[str] = mapped_column(String(200), nullable=False)
+    nombre_normalizado: Mapped[str] = mapped_column(
+        String(200), nullable=False, server_default=""
+    )
+    consultorio: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default=Consultorio.NEUROVITAL.value
+    )
     telefono: Mapped[str | None] = mapped_column(String(50), nullable=True)
     obra_social_id: Mapped[int | None] = mapped_column(
         ForeignKey("obras_sociales.id"), nullable=True

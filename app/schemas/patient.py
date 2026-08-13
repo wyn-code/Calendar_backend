@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pydantic import Field
 
+from app.models.patient import Consultorio
 from app.schemas.base import BaseSchema
 
 
@@ -10,6 +11,7 @@ class PatientBase(BaseSchema):
     telefono: str | None = Field(default=None, max_length=50)
     obra_social_id: int | None = None
     observaciones: str | None = None
+    consultorio: Consultorio = Consultorio.NEUROVITAL
 
 
 class PatientCreate(PatientBase):
@@ -23,6 +25,7 @@ class PatientUpdate(BaseSchema):
     telefono: str | None = Field(default=None, max_length=50)
     obra_social_id: int | None = None
     observaciones: str | None = None
+    consultorio: Consultorio | None = None
 
 
 class PatientResponse(PatientBase):

@@ -1,9 +1,10 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models.patient import Patient
+from app.models.patient import Consultorio, Patient
 from app.repositories.patient_repository import PatientRepository
 from app.schemas.patient import PatientCreate, PatientUpdate
+from app.utils.normalize import normalize_nombre
 
 
 class PatientService:
@@ -13,13 +14,56 @@ class PatientService:
         self.repository = PatientRepository(db)
 
     def create(self, data: PatientCreate) -> Patient:
-        """Crea un nuevo paciente."""
-        return self.repository.create(data)
+        """Crea un nuevo paciente.
+
+        Rechaza con 409 si ya existe otro paciente del mismo consultorio con
+        el mismo nombre normalizado (evita duplicados por orden de nombre).
+        """
+        payload = data.model_dump()
+        payload["nombre_normalizado"] = normalize_nombre(data.nombre_completo)
+        existing = self.repository.get_duplicate(
+            payload["nombre_normalizado"], payload["consultorio"]
+        )
+        if existing is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "message": "Ya existe un paciente similar.",
+                    "existing_patient_id": existing.id,
+                    "existing_nombre": existing.nombre_completo,
+                },
+            )
+        return self.repository.create(payload)
 
     def update(self, obj_id: int, data: PatientUpdate) -> Patient:
         """Actualiza un paciente existente."""
         instance = self.get(obj_id)
-        return self.repository.update(instance, data)
+        updates = data.model_dump(exclude_unset=True)
+        if "nombre_completo" in updates:
+            updates["nombre_normalizado"] = normalize_nombre(
+                updates["nombre_completo"]
+            )
+        self._check_duplicate_on_update(instance, updates)
+        return self.repository.update(instance, updates)
+
+    def _check_duplicate_on_update(self, instance: Patient, updates: dict) -> None:
+        """Rechaza con 409 si la actualización genera un duplicado dentro del consultorio."""
+        consultorio = updates.get("consultorio", instance.consultorio)
+        if isinstance(consultorio, Consultorio):
+            consultorio = consultorio.value
+        nombre_normalizado = updates.get(
+            "nombre_normalizado", instance.nombre_normalizado
+        )
+        existing = self.repository.get_duplicate(nombre_normalizado, consultorio)
+        if existing is not None and existing.id != instance.id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "message": "Ya existe un paciente similar.",
+                    "existing_patient_id": existing.id,
+                    "existing_nombre": existing.nombre_completo,
+                },
+            )
 
     def delete(self, obj_id: int) -> None:
         """Elimina un paciente."""
@@ -36,7 +80,14 @@ class PatientService:
         return instance
 
     def list(
-        self, *, search: str | None = None, skip: int = 0, limit: int = 100
+        self,
+        *,
+        search: str | None = None,
+        consultorio: str | None = None,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[Patient]:
         """Devuelve una lista paginada de pacientes, con búsqueda por nombre."""
-        return self.repository.get_all(search=search, skip=skip, limit=limit)
+        return self.repository.get_all(
+            search=search, consultorio=consultorio, skip=skip, limit=limit
+        )
