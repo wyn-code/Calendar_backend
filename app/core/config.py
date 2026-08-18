@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REMEMBER_ME_EXPIRE_DAYS: int = 30
 
+    # --- Billing / Neurovital ---
+    BASE_SESSION_AMOUNT: float = 30000.0
+    NEUROVITAL_OBRA_SOCIAL_PERCENT: float = 20.0
+    NEUROVITAL_PARTICULAR_PERCENT: float = 15.0
+
     # --- CORS (orígenes permitidos para el frontend React) ---
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
