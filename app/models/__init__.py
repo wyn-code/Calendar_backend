@@ -6,6 +6,7 @@ from app.models.obra_social import ObraSocial
 from app.models.appointment import Appointment
 from app.models.consultorio import Consultorio
 from app.models.config_models import ConfigPrecio, ConfigPorcentaje, Factura
+from app.models.user_settings import UserSettings
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "ConfigPrecio",
     "ConfigPorcentaje",
     "Factura",
+    "UserSettings",
 ]

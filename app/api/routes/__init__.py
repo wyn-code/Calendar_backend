@@ -13,6 +13,7 @@ from app.api.routes import (
     obra_social,
     patients,
     patients_summary,
+    settings,
 )
 
 api_router = APIRouter()
@@ -28,3 +29,4 @@ api_router.include_router(billing_por_consultorio.router)
 api_router.include_router(consultorios.router)
 api_router.include_router(config.router)
 api_router.include_router(facturas.router)
+api_router.include_router(settings.router)

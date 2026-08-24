@@ -1,10 +1,16 @@
+import logging
+from pathlib import Path
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.patient import Consultorio, Patient
 from app.repositories.patient_repository import PatientRepository
 from app.schemas.patient import PatientCreate, PatientUpdate
 from app.utils.normalize import normalize_nombre
+
+logger = logging.getLogger(__name__)
 
 
 class PatientService:
@@ -33,7 +39,20 @@ class PatientService:
                     "existing_nombre": existing.nombre_completo,
                 },
             )
-        return self.repository.create(payload)
+        patient = self.repository.create(payload)
+        self._create_factura_folder(patient.id)
+        return patient
+
+    def _create_factura_folder(self, patient_id: int) -> None:
+        """Crea la carpeta de facturas para un paciente. Best-effort: no falla si no puede."""
+        try:
+            base = Path(settings.FACTURAS_BASE_PATH)
+            folder = base / str(patient_id)
+            folder.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            logger.warning(
+                "No se pudo crear la carpeta de facturas para el paciente %s", patient_id
+            )
 
     def update(self, obj_id: int, data: PatientUpdate) -> Patient:
         """Actualiza un paciente existente."""

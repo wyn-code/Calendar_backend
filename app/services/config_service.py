@@ -31,12 +31,12 @@ class ConfigService:
     def set_precio(self, clave: str, valor: float) -> ConfigPrecio:
         return self.precios_repo.upsert(clave, valor)
 
-    def get_porcentajes(self) -> dict[str, float]:
+    def get_porcentajes(self, consultorio: str | None = None) -> dict[str, float]:
         result = {}
         for clave, default in DEFAULT_PORCENTAJES.items():
-            instance = self.porcentajes_repo.get_by_clave(clave)
+            instance = self.porcentajes_repo.get_by_clave_and_consultorio(clave, consultorio)
             result[clave] = instance.valor if instance else default
         return result
 
-    def set_porcentaje(self, clave: str, valor: float) -> ConfigPorcentaje:
-        return self.porcentajes_repo.upsert(clave, valor)
+    def set_porcentaje(self, clave: str, valor: float, consultorio: str | None = None) -> ConfigPorcentaje:
+        return self.porcentajes_repo.upsert(clave, valor, consultorio)

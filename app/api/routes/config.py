@@ -31,8 +31,11 @@ def set_precio(
 
 
 @router.get("/porcentajes", response_model=PorcentajesResponse)
-def get_porcentajes(db: DbSession) -> PorcentajesResponse:
-    data = ConfigService(db).get_porcentajes()
+def get_porcentajes(
+    db: DbSession,
+    consultorio: str | None = None,
+) -> PorcentajesResponse:
+    data = ConfigService(db).get_porcentajes(consultorio=consultorio)
     return PorcentajesResponse(**data)
 
 
@@ -41,8 +44,9 @@ def set_porcentaje(
     clave: str,
     payload: ConfigPorcentajeUpdate,
     db: DbSession,
+    consultorio: str | None = None,
 ) -> ConfigPorcentajeResponse:
-    instance = ConfigService(db).set_porcentaje(clave, payload.valor)
+    instance = ConfigService(db).set_porcentaje(clave, payload.valor, consultorio=consultorio)
     return ConfigPorcentajeResponse(
         id=instance.id, clave=instance.clave, valor=instance.valor
     )

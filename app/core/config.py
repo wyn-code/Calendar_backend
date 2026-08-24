@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     NEUROVITAL_OBRA_SOCIAL_PERCENT: float = 20.0
     NEUROVITAL_PARTICULAR_PERCENT: float = 15.0
 
+    # --- Cloudinary (upload de imágenes de fondo) ---
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_UPLOAD_PRESET: str = "calendar-pro-fondos"
+
+    # --- Facturas (carpetas locales) ---
+    FACTURAS_BASE_PATH: str = "./facturas"
+
     # --- CORS (orígenes permitidos para el frontend React) ---
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
