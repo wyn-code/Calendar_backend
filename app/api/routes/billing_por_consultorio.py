@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import DbSession
 from app.core.config import settings
 from app.models.appointment import Appointment
+from app.models.config_models import ConfigPorcentaje
 from app.models.patient import Patient
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -21,6 +22,10 @@ class ConsultorioBilling(BaseModel):
     particular_amount: float
     obra_social_amount: float
     total: float
+    total_bruto: float
+    a_favor: float
+    particular_pct: float
+    obra_social_pct: float
 
 
 class BillingPorConsultorioResponse(BaseModel):
@@ -28,7 +33,19 @@ class BillingPorConsultorioResponse(BaseModel):
     month: int
     consultorios: list[ConsultorioBilling]
     total_a_pagar: float
+    total_bruto: float
     a_favor: float
+
+
+def _get_porcentaje(db: Session, clave: str, consultorio: str) -> float:
+    """Lee el porcentaje de config_porcentajes para un consultorio, o devuelve el default."""
+    defaults = {"particular": 15.0, "obra_social": 20.0}
+    stmt = select(ConfigPorcentaje).where(
+        ConfigPorcentaje.clave == clave,
+        ConfigPorcentaje.consultorio == consultorio,
+    )
+    instance = db.scalars(stmt).first()
+    return instance.valor if instance else defaults.get(clave, 15.0)
 
 
 @router.get("/por-consultorio", response_model=BillingPorConsultorioResponse)
@@ -36,6 +53,7 @@ def get_billing_por_consultorio(
     db: DbSession,
     year: int = Query(..., ge=2020, le=2100),
     month: int = Query(..., ge=1, le=12),
+    consultorio: str | None = Query(None),
 ) -> BillingPorConsultorioResponse:
     """Desglose de facturación por consultorio y tipo de consulta."""
     first_day = date(year, month, 1)
@@ -57,49 +75,65 @@ def get_billing_por_consultorio(
     rows = db.execute(stmt).all()
 
     consultorio_data: dict[str, dict] = {}
-    for consultorio, tipo_consulta, count in rows:
-        if consultorio not in consultorio_data:
-            consultorio_data[consultorio] = {
+    for cons, tipo_consulta, count in rows:
+        if cons not in consultorio_data:
+            consultorio_data[cons] = {
                 "particular_sessions": 0,
                 "obra_social_sessions": 0,
             }
         if tipo_consulta == "Obra Social":
-            consultorio_data[consultorio]["obra_social_sessions"] += count
+            consultorio_data[cons]["obra_social_sessions"] += count
         else:
-            consultorio_data[consultorio]["particular_sessions"] += count
+            consultorio_data[cons]["particular_sessions"] += count
 
     consultorios_billing = []
     total_a_pagar = 0.0
+    total_bruto = 0.0
     total_sessions = 0
 
-    for consultorio, data in consultorio_data.items():
+    for cons, data in consultorio_data.items():
+        pct_particular = _get_porcentaje(db, "particular", cons)
+        pct_os = _get_porcentaje(db, "obra_social", cons)
+
         particular_amount = data["particular_sessions"] * (
-            settings.BASE_SESSION_AMOUNT * settings.NEUROVITAL_PARTICULAR_PERCENT / 100
+            settings.BASE_SESSION_AMOUNT * pct_particular / 100
         )
         obra_social_amount = data["obra_social_sessions"] * (
-            settings.BASE_SESSION_AMOUNT * settings.NEUROVITAL_OBRA_SOCIAL_PERCENT / 100
+            settings.BASE_SESSION_AMOUNT * pct_os / 100
         )
         consultorio_total = particular_amount + obra_social_amount
+        sessions = data["particular_sessions"] + data["obra_social_sessions"]
+        bruto = sessions * settings.BASE_SESSION_AMOUNT
+
         total_a_pagar += consultorio_total
-        total_sessions += data["particular_sessions"] + data["obra_social_sessions"]
+        total_bruto += bruto
+        total_sessions += sessions
 
         consultorios_billing.append(
             ConsultorioBilling(
-                consultorio=consultorio,
+                consultorio=cons,
                 particular_sessions=data["particular_sessions"],
                 obra_social_sessions=data["obra_social_sessions"],
                 particular_amount=particular_amount,
                 obra_social_amount=obra_social_amount,
                 total=consultorio_total,
+                total_bruto=bruto,
+                a_favor=bruto - consultorio_total,
+                particular_pct=pct_particular,
+                obra_social_pct=pct_os,
             )
         )
 
     consultorios_billing.sort(key=lambda c: c.consultorio)
+
+    if consultorio:
+        consultorios_billing = [c for c in consultorios_billing if c.consultorio == consultorio]
 
     return BillingPorConsultorioResponse(
         year=year,
         month=month,
         consultorios=consultorios_billing,
         total_a_pagar=total_a_pagar,
-        a_favor=(total_sessions * settings.BASE_SESSION_AMOUNT) - total_a_pagar,
+        total_bruto=total_bruto,
+        a_favor=total_bruto - total_a_pagar,
     )

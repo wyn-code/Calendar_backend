@@ -14,6 +14,7 @@ class AppointmentBase(BaseSchema):
     hora_inicio: time
     tipo_consulta: str = Field(min_length=1, max_length=50)
     observaciones: str | None = None
+    es_discapacidad: bool = False
 
 
 class AppointmentCreate(AppointmentBase):
@@ -51,6 +52,7 @@ class AppointmentUpdate(BaseSchema):
     hora_inicio: time | None = None
     tipo_consulta: str | None = Field(default=None, min_length=1, max_length=50)
     observaciones: str | None = None
+    es_discapacidad: bool | None = None
 
     @model_validator(mode="after")
     def validar_obra_social(self) -> Self:
