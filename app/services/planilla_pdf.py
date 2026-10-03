@@ -156,7 +156,7 @@ def generar_planilla_pdf(
     story.append(Paragraph(f"Planilla de sesiones — {mes_y_anio_titulo}", style_titulo))
 
     # --- Tabla principal ---
-    encabezado = ["PACIENTE", "O.S.", "PARTICULAR", "CANT.\nSESIONES", "MES\nCOBRADO"]
+    encabezado = ["PACIENTE", "O.S.", "PARTICULAR", "CANT.\nSESIONES", "MES\nCOBRADO", "%"]
     data = [encabezado]
     for f in filas:
         data.append([
@@ -165,12 +165,13 @@ def generar_planilla_pdf(
             _crear_check() if f.es_particular else Paragraph("-", style_celda_center),
             str(f.cantidad_sesiones),
             mes_nombre,
+            "",
         ])
 
     for _ in range(filas_vacias_extra):
-        data.append(["", "", "", "", ""])
+        data.append(["", "", "", "", "", ""])
 
-    col_widths = [52 * mm, 26 * mm, 26 * mm, 26 * mm, 26 * mm]
+    col_widths = [52 * mm, 26 * mm, 26 * mm, 26 * mm, 26 * mm, 26 * mm]
     tabla = Table(data, colWidths=col_widths, repeatRows=1)
 
     n_filas_con_datos = len(filas)
